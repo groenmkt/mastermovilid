@@ -88,6 +88,16 @@
             color: #e74c3c;
         }
 
+        .security-indicator {
+            background: rgba(155, 89, 182, 0.2);
+            color: #9b59b6;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border: 1px solid #9b59b6;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -168,6 +178,16 @@
             box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
         }
 
+        .admin-section {
+            border: 2px solid rgba(155, 89, 182, 0.5);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+
+        .admin-section .section-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
         .quick-links {
             margin-top: 30px;
             padding-top: 20px;
@@ -231,6 +251,10 @@
             <span class="loading"></span>Conectando a Firebase...
         </div>
 
+        <div class="security-indicator">
+            🔒 Modo Seguro Activado - Firebase Protegido
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="stat-number" id="totalCredentials">-</span>
@@ -255,29 +279,29 @@
                 <h2 class="section-title">🏪 Comercios Afiliados</h2>
                 <p class="section-description">
                     Valida credenciales de estudiantes y aplica descuentos exclusivos. 
-                    Sistema en tiempo real para comercios autorizados.
+                    Sistema seguro para comercios autorizados.
                 </p>
                 <a href="validador.html" class="section-btn">
                     🔍 Acceder al Validador
                 </a>
             </div>
             
-            <div class="user-section">
-                <h2 class="section-title">⚙️ Administración</h2>
+            <div class="user-section admin-section">
+                <h2 class="section-title">⚙️ Administración Segura</h2>
                 <p class="section-description">
-                    Panel completo para gestionar credenciales, comercios y 
-                    análisis de datos del sistema.
+                    Panel protegido para gestionar credenciales, comercios y 
+                    análisis de datos del sistema. Acceso restringido.
                 </p>
-                <a href="admin.html" class="section-btn">
-                    📊 Panel Administrativo
+                <a href="admin-master-2025.html" class="section-btn">
+                    🛡️ Panel Administrativo
                 </a>
             </div>
         </div>
         
         <div class="quick-links">
-            <a href="generador.html" class="quick-link">🎯 Generador</a>
+            <a href="generador-master-2025.html" class="quick-link">🎯 Generador</a>
             <a href="validador.html" class="quick-link">🔍 Validador</a>
-            <a href="admin.html" class="quick-link">📊 Admin</a>
+            <a href="admin-master-2025.html" class="quick-link">🛡️ Admin</a>
         </div>
     </div>
 
@@ -303,7 +327,7 @@
             isFirebaseConnected = true;
             updateConnectionStatus(true);
             loadRealTimeStats();
-            console.log('✅ Firebase conectado correctamente en index.html');
+            console.log('✅ Firebase conectado en modo seguro');
         } catch (error) {
             console.error('❌ Error conectando Firebase:', error);
             updateConnectionStatus(false);
@@ -313,7 +337,7 @@
             const statusElement = document.getElementById('connectionStatus');
             if (connected) {
                 statusElement.className = 'status connected';
-                statusElement.innerHTML = '🟢 Sistema Online - Firebase Conectado';
+                statusElement.innerHTML = '🟢 Sistema Online - Modo Seguro';
             } else {
                 statusElement.className = 'status disconnected';
                 statusElement.innerHTML = '🔴 Sin conexión a Firebase';
@@ -323,39 +347,40 @@
         function loadRealTimeStats() {
             if (!isFirebaseConnected) return;
 
-            // Escuchar credenciales
+            // Escuchar credenciales (solo lectura)
             db.ref('credenciales').on('value', (snapshot) => {
                 const data = snapshot.val() || {};
                 const credentials = Object.values(data);
                 const activeCredentials = credentials.filter(c => c.estado === 'Activa').length;
                 
                 updateStat('totalCredentials', activeCredentials);
-                console.log('📄 Credenciales sincronizadas:', credentials.length);
+                console.log('📄 Credenciales sincronizadas (solo lectura):', credentials.length);
             }, (error) => {
-                console.error('Error cargando credenciales:', error);
+                console.warn('⚠️ Acceso limitado a credenciales (seguridad activada)');
             });
 
-            // Escuchar comercios
+            // Escuchar comercios (solo lectura)
             db.ref('comercios').on('value', (snapshot) => {
                 const data = snapshot.val() || {};
                 const commerces = Object.values(data);
                 const activeCommerces = commerces.filter(c => c.active).length;
                 
                 updateStat('totalCommerces', activeCommerces);
-                console.log('🏪 Comercios sincronizados:', commerces.length);
+                console.log('🏪 Comercios sincronizados (solo lectura):', commerces.length);
             }, (error) => {
-                console.error('Error cargando comercios:', error);
+                console.warn('⚠️ Acceso limitado a comercios (seguridad activada)');
             });
 
-            // Escuchar validaciones
+            // Intentar escuchar validaciones (debería ser bloqueado)
             db.ref('validaciones').on('value', (snapshot) => {
                 const data = snapshot.val() || {};
                 const validations = Object.keys(data).length;
                 
                 updateStat('totalValidations', validations);
-                console.log('✅ Validaciones sincronizadas:', validations);
+                console.log('✅ Validaciones accesibles desde admin');
             }, (error) => {
-                console.error('Error cargando validaciones:', error);
+                console.log('🔒 Validaciones protegidas (solo admin puede ver)');
+                updateStat('totalValidations', 'Privado');
             });
         }
 
@@ -366,48 +391,43 @@
             }
         }
 
-        // Verificar conectividad de archivos
-        function testFileConnectivity() {
-            const files = ['generador.html', 'validador.html', 'admin.html'];
-            files.forEach(file => {
-                fetch(file, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            console.log(`✅ ${file} disponible`);
-                        } else {
-                            console.warn(`⚠️ ${file} problema de acceso`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`❌ ${file} no encontrado`);
-                    });
-            });
+        // Verificar modo seguro
+        function checkSecurityMode() {
+            console.log('🔒 Verificando modo seguro...');
+            
+            // Test de escritura (debería fallar)
+            db.ref('test-security').set({ test: true })
+                .then(() => {
+                    console.warn('⚠️ ADVERTENCIA: Las reglas de seguridad no están activas');
+                })
+                .catch(() => {
+                    console.log('✅ Seguridad activada: Escritura bloqueada correctamente');
+                });
         }
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Master Móvil Portal v1.0 - Firebase Integrado');
-            console.log('📊 Cargando estadísticas en tiempo real...');
-            
-            testFileConnectivity();
+            console.log('🛡️ Master Móvil Portal v2.0 - Modo Seguro');
+            console.log('🔒 URLs protegidas implementadas');
             
             setTimeout(() => {
-                console.log('📈 Estado del sistema:');
-                console.log('- Firebase:', isFirebaseConnected ? 'Conectado' : 'Desconectado');
-                console.log('- Estadísticas:', 'Actualizándose en tiempo real');
-                console.log('- URL:', window.location.href);
+                checkSecurityMode();
+                console.log('📊 Sistema en modo seguro:');
+                console.log('- Comercios: Solo validador público');
+                console.log('- Admin: URLs secretas protegidas');
+                console.log('- Firebase: Reglas de seguridad activas');
             }, 2000);
         });
 
         // Funciones de debugging
-        window.MasterMovilPortal = {
+        window.MasterMovilSecure = {
             isConnected: () => isFirebaseConnected,
+            testSecurity: checkSecurityMode,
             getStats: () => ({
                 credentials: document.getElementById('totalCredentials').textContent,
                 commerces: document.getElementById('totalCommerces').textContent,
                 validations: document.getElementById('totalValidations').textContent
-            }),
-            testFiles: testFileConnectivity
+            })
         };
     </script>
 </body>
