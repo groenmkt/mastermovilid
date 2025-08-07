@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Móvil - Sistema de Credenciales</title>
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #d4af37;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            background: rgba(212, 175, 55, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .title {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
+
+        .status.connected {
+            background: rgba(46, 204, 113, 0.2);
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+
+        .status.connecting {
+            background: rgba(241, 196, 15, 0.2);
+            border-color: #f1c40f;
+            color: #f1c40f;
+        }
+
+        .status.disconnected {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #d4af37;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.8;
+            font-size: 0.8rem;
+        }
+
+        .user-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .user-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .user-section:hover {
+            transform: translateY(-5px);
+            border-color: #d4af37;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .section-description {
+            margin-bottom: 25px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .section-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #d4af37, #f1c40f);
+            color: #1a1a1a;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+
+        .section-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .quick-links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .quick-link {
+            display: inline-block;
+            margin: 0 15px;
+            color: rgba(212, 175, 55, 0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .quick-link:hover {
+            color: #d4af37;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(241, 196, 15, 0.3);
+            border-radius: 50%;
+            border-top-color: #f1c40f;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            .title {
+                font-size: 2rem;
+            }
+            .user-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎓</div>
+        <h1 class="title">Master Móvil</h1>
+        <p class="subtitle">Sistema de Credenciales Digitales</p>
+        
+        <div class="status connecting" id="connectionStatus">
+            <span class="loading"></span>Conectando a Firebase...
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="totalCredentials">-</span>
+                <div class="stat-label">Credenciales</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="totalCommerces">-</span>
+                <div class="stat-label">Comercios</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="totalValidations">-</span>
+                <div class="stat-label">Validaciones</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">24/7</span>
+                <div class="stat-label">Online</div>
+            </div>
+        </div>
+        
+        <div class="user-sections">
+            <div class="user-section">
+                <h2 class="section-title">🏪 Comercios Afiliados</h2>
+                <p class="section-description">
+                    Valida credenciales de estudiantes y aplica descuentos exclusivos. 
+                    Sistema en tiempo real para comercios autorizados.
+                </p>
+                <a href="validador.html" class="section-btn">
+                    🔍 Acceder al Validador
+                </a>
+            </div>
+            
+            <div class="user-section">
+                <h2 class="section-title">⚙️ Administración</h2>
+                <p class="section-description">
+                    Panel completo para gestionar credenciales, comercios y 
+                    análisis de datos del sistema.
+                </p>
+                <a href="admin.html" class="section-btn">
+                    📊 Panel Administrativo
+                </a>
+            </div>
+        </div>
+        
+        <div class="quick-links">
+            <a href="generador.html" class="quick-link">🎯 Generador</a>
+            <a href="validador.html" class="quick-link">🔍 Validador</a>
+            <a href="admin.html" class="quick-link">📊 Admin</a>
+        </div>
+    </div>
+
+    <script>
+        // 🔥 CONFIGURACIÓN FIREBASE - EXACTAMENTE IGUAL QUE LOS OTROS ARCHIVOS
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUM0tIPiCfcEnLbcK8JPZMBBIpY89wlV0",
+            authDomain: "master-movil-credenciales.firebaseapp.com",
+            databaseURL: "https://master-movil-credenciales-default-rtdb.firebaseio.com",
+            projectId: "master-movil-credenciales",
+            storageBucket: "master-movil-credenciales.firebasestorage.app",
+            messagingSenderId: "30682645748",
+            appId: "1:30682645748:web:7318cb15d2baa87f6b0aa1"
+        };
+
+        let db;
+        let isFirebaseConnected = false;
+
+        // Inicializar Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            isFirebaseConnected = true;
+            updateConnectionStatus(true);
+            loadRealTimeStats();
+            console.log('✅ Firebase conectado correctamente en index.html');
+        } catch (error) {
+            console.error('❌ Error conectando Firebase:', error);
+            updateConnectionStatus(false);
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (connected) {
+                statusElement.className = 'status connected';
+                statusElement.innerHTML = '🟢 Sistema Online - Firebase Conectado';
+            } else {
+                statusElement.className = 'status disconnected';
+                statusElement.innerHTML = '🔴 Sin conexión a Firebase';
+            }
+        }
+
+        function loadRealTimeStats() {
+            if (!isFirebaseConnected) return;
+
+            // Escuchar credenciales
+            db.ref('credenciales').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const credentials = Object.values(data);
+                const activeCredentials = credentials.filter(c => c.estado === 'Activa').length;
+                
+                updateStat('totalCredentials', activeCredentials);
+                console.log('📄 Credenciales sincronizadas:', credentials.length);
+            }, (error) => {
+                console.error('Error cargando credenciales:', error);
+            });
+
+            // Escuchar comercios
+            db.ref('comercios').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const commerces = Object.values(data);
+                const activeCommerces = commerces.filter(c => c.active).length;
+                
+                updateStat('totalCommerces', activeCommerces);
+                console.log('🏪 Comercios sincronizados:', commerces.length);
+            }, (error) => {
+                console.error('Error cargando comercios:', error);
+            });
+
+            // Escuchar validaciones
+            db.ref('validaciones').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                const validations = Object.keys(data).length;
+                
+                updateStat('totalValidations', validations);
+                console.log('✅ Validaciones sincronizadas:', validations);
+            }, (error) => {
+                console.error('Error cargando validaciones:', error);
+            });
+        }
+
+        function updateStat(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        // Verificar conectividad de archivos
+        function testFileConnectivity() {
+            const files = ['generador.html', 'validador.html', 'admin.html'];
+            files.forEach(file => {
+                fetch(file, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log(`✅ ${file} disponible`);
+                        } else {
+                            console.warn(`⚠️ ${file} problema de acceso`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`❌ ${file} no encontrado`);
+                    });
+            });
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Master Móvil Portal v1.0 - Firebase Integrado');
+            console.log('📊 Cargando estadísticas en tiempo real...');
+            
+            testFileConnectivity();
+            
+            setTimeout(() => {
+                console.log('📈 Estado del sistema:');
+                console.log('- Firebase:', isFirebaseConnected ? 'Conectado' : 'Desconectado');
+                console.log('- Estadísticas:', 'Actualizándose en tiempo real');
+                console.log('- URL:', window.location.href);
+            }, 2000);
+        });
+
+        // Funciones de debugging
+        window.MasterMovilPortal = {
+            isConnected: () => isFirebaseConnected,
+            getStats: () => ({
+                credentials: document.getElementById('totalCredentials').textContent,
+                commerces: document.getElementById('totalCommerces').textContent,
+                validations: document.getElementById('totalValidations').textContent
+            }),
+            testFiles: testFileConnectivity
+        };
+    </script>
+</body>
+</html>
